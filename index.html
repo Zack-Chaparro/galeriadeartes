@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Arte</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #ff0000;
+            color: #ffffff;
+            padding: 1em;
+            text-align: center;
+            position: relative;
+        }
+        header h1 {
+            margin: 0;
+        }
+        .admin-button {
+            position: absolute;
+            right: 1em;
+            top: 1em;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 0.5em 1em;
+            cursor: pointer;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 1em;
+        }
+        .gallery-item {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            overflow: hidden;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .gallery-item .description {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: none;
+        }
+        .gallery-item:hover .description {
+            display: block;
+        }
+        .modal, .login-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        .modal-content, .login-modal-content {
+            margin: 10% auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .modal-content img {
+            width: 100%;
+        }
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .search-container {
+            text-align: center;
+            margin: 1em 0;
+        }
+        .search-container input[type="text"] {
+            width: 80%;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+        .rating {
+            direction: rtl;
+            unicode-bidi: bidi-override;
+        }
+        .rating > label {
+            display: inline-block;
+            position: relative;
+            width: 1.1em;
+            font-size: 2em;
+            color: #FFD700;
+            cursor: pointer;
+        }
+        .rating > label::before {
+            content: "★";
+            display: block;
+        }
+        .rating > input {
+            display: none;
+        }
+        .rating > input:checked ~ label {
+            color: #FFD700;
+        }
+        .rating > input:checked ~ label ~ label {
+            color: #DDD;
+        }
+        .comments {
+            margin-top: 1em;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .comments p {
+            margin: 0.5em 0;
+        }
+        .comments-form {
+            margin-top: 1em;
+        }
+        .comments-form textarea {
+            width: 100%;
+            padding: 0.5em;
+            font-size: 1em;
+        }
+        .comments-form button {
+            margin-top: 0.5em;
+            padding: 0.5em 1em;
+            font-size: 1em;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .admin-section {
+            display: none;
+            padding: 1em;
+            background-color: #fff;
+            margin: 1em auto;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .admin-section h2 {
+            margin-top: 0;
+        }
+        .admin-section .comments {
+            margin-top: 1em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Galería de Arte para Romi</h1>
+        <button class="admin-button" onclick="openLoginModal()">Admin</button>
+    </header>
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Buscar dibujos..." onkeyup="searchImages()">
+    </div>
+    <div class="gallery" id="gallery">
+        <!-- Dibujos agregados aquí -->
+    </div>
+    <div id="myModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" src="">
+            <div class="description" id="modalDescription"></div>
+            <div class="rating" id="modalRating">
+                <!-- Estrellas de calificación -->
+                <input type="radio" id="star5" name="rating" value="5"><label for="star5">★</label>
+                <input type="radio" id="star4" name="rating" value="4"><label for="star4">★</label>
+                <input type="radio" id="star3" name="rating" value="3"><label for="star3">★</label>
+                <input type="radio" id="star2" name="rating" value="2"><label for="star2">★</label>
+                <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
+            </div>
+            <div class="comments" id="modalComments">
+                <p>Comentarios:</p>
+                <!-- Comentarios agregados aquí -->
+            </div>
+            <div class="comments-form">
+                <textarea id="commentText" rows="3" placeholder="Escribe un comentario..."></textarea>
+                <button onclick="addComment()">Enviar</button>
+            </div>
+        </div>
+    </div>
+    <div id="loginModal" class="login-modal">
+        <div class="login-modal-content">
+            <h2>Admin cargar</h2>
+            <input type="password" id="adminPassword" placeholder="ingrese contraseña">
+            <button onclick="checkPassword()">cargar contraseña</button>
+        </div>
+    </div>
+    <div id="adminSection" class="admin-section">
+        <h2>Sección de Administración</h2>
+        <div class="admin-comments" id="adminComments">
+            <!-- Comentarios de administración -->
+        </div>
+    </div>
+    <script>
+        const galleryData = [
+        {src: 'ramito.jpeg', description: 'Dibujo 1', rating: 0, comments: []},
+            {src: 'romi.jpeg', description: 'Dibujo 2', rating: 0, comments: []},
+            {src: 'chispitas.jpeg', description: 'Dibujo 8', rating: 0, comments: []},
+            {src: 'oink.jpeg', description: 'Dibujo 3', rating: 0, comments: []},
+            {src: 'mundo.jpeg', description: 'Dibujo 4', rating: 0, comments: []},
+            {src: 'mayo.jpeg', description: 'Dibujo 6', rating: 0, comments: []},
+            {src: 'cancion - copia.jpeg', description: 'Dibujo 9', rating: 0, comments: []},
+            {src: '4 meses.jpeg', description: 'Dibujo 7', rating: 0, comments: []},
+            {src: 'caracol.jpeg', description: 'Dibujo 5', rating: 0, comments: []}
+        ];
+
+        const adminPassword = '1051474234'; // Cambia esta contraseña
+        let currentImageIndex = 0;
+
+        function createGalleryItem(data, index) {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = `
+                <img src="${data.src}" alt="${data.description}" onclick="openModal(${index})">
+                <div class="description">${data.description}</div>
+            `;
+            return item;
+        }
+
+        function displayGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            galleryData.forEach((data, index) => {
+                gallery.appendChild(createGalleryItem(data, index));
+            });
+        }
+
+        function openModal(index) {
+            currentImageIndex = index;
+            const data = galleryData[index];
+            document.getElementById('modalImage').src = data.src;
+            document.getElementById('modalDescription').textContent = data.description;
+            document.getElementById('myModal').style.display = 'block';
+            displayComments(data.comments);
+        }
+
+        function closeModal() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        function searchImages() {
+            const input = document.getElementById('search').value.toLowerCase();
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            galleryData.filter(data => data.description.toLowerCase().includes(input)).forEach((data, index) => {
+                gallery.appendChild(createGalleryItem(data, index));
+            });
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function checkPassword() {
+            const enteredPassword = document.getElementById('adminPassword').value;
+            if (enteredPassword === adminPassword) {
+                document.getElementById('adminSection').style.display = 'block';
+                loadAdminComments();
+                closeLoginModal();
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        }
+
+        function addComment() {
+            const commentText = document.getElementById('commentText').value;
+            if (commentText.trim() !== '') {
+                galleryData[currentImageIndex].comments.push(commentText);
+                displayComments(galleryData[currentImageIndex].comments);
+                document.getElementById('commentText').value = '';
+            }
+        }
+
+        function displayComments(comments) {
+            const commentsContainer = document.getElementById('modalComments');
+            commentsContainer.innerHTML = '<p>Comentarios:</p>';
+            comments.forEach(comment => {
+                const commentElement = document.createElement('p');
+                commentElement.textContent = comment;
+                commentsContainer.appendChild(commentElement);
+            });
+        }
+
+        function loadAdminComments() {
+            const adminCommentsContainer = document.getElementById('adminComments');
+            adminCommentsContainer.innerHTML = '';
+            galleryData.forEach((data, index) => {
+                const comments = data.comments;
+                if (comments.length > 0) {
+                    const commentSection = document.createElement('div');
+                    commentSection.className = 'comments';
+                    commentSection.innerHTML = `<h3>${data.description}</h3>`;
+                    comments.forEach(comment => {
+                        const commentElement = document.createElement('p');
+                        commentElement.textContent = comment;
+                        commentSection.appendChild(commentElement);
+                    });
+                    adminCommentsContainer.appendChild(commentSection);
+                }
+            });
+        }
+
+        window.onload = displayGallery;
+    </script>
+</body>
+</html>
